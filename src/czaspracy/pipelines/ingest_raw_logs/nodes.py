@@ -40,3 +40,20 @@ def convert_text_file_to_dataframe(contets : str):
 
 
     return pd.DataFrame({'date' : dates, 'hour' : hour, 'event': event, 'place': place, 'person': person}), pd.DataFrame({'rejected' : rejected})
+
+
+def retain_persons_with_prefix(logs: pd.DataFrame, company_prefix: str):
+    if not isinstance(logs, pd.DataFrame):
+        raise RuntimeError('First input param should be dataFrame')
+    if not isinstance(company_prefix, str):
+        raise RuntimeError('Second input param should be string')
+    if 'person' not in logs.columns:
+        raise RuntimeError('Column person not in dataframe')
+    
+    logs = logs[logs['person'].str.contains(company_prefix)]
+    return logs.reset_index()
+
+test_data = ['A:Person1', 'B:Person1', 'C:Person1','A:Person1']
+date = ['2022-02-22', '2022-02-22', '2022-02-22', '2022-02-22']
+result = retain_persons_with_prefix(pd.DataFrame({'person' : test_data, 'date': date}), 'A:')
+print(result)

@@ -18,3 +18,4 @@ def create_pipeline(**kwargs) -> Pipeline:
         inputs="raw_logs",
         outputs=["parsed_logs",'rejected_logs']
     )
+    
