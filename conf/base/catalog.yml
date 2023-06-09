@@ -1,4 +1,3 @@
-# Here you can define all your data sets by using simple YAML syntax.
-#
-# Documentation for this file format can be found in "The Data Catalog"
-# Link: https://docs.kedro.org/en/stable/data/data_catalog.html
+raw_logs:
+  type: text.TextDataSet
+  filepath: data/01_raw/raw.txt
