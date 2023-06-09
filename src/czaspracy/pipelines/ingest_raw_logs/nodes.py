@@ -38,5 +38,5 @@ def convert_text_file_to_dataframe(contets : str):
         place.append(details[1])
         person.append(details[2])
 
-    print(rejected)
+
     return pd.DataFrame({'date' : dates, 'hour' : hour, 'event': event, 'place': place, 'person': person}), pd.DataFrame({'rejected' : rejected})

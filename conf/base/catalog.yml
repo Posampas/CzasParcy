@@ -1,3 +1,11 @@
 raw_logs:
   type: text.TextDataSet
   filepath: data/01_raw/raw.txt
+
+parsed_logs:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/parsed_logs.csv
+
+rejected_logs:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/rejected_logs.csv
