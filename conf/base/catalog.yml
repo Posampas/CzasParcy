@@ -9,3 +9,7 @@ parsed_logs:
 rejected_logs:
   type: pandas.CSVDataSet
   filepath: data/01_raw/rejected_logs.csv
+
+only_TP_emp:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/only_TE_emp.csv
