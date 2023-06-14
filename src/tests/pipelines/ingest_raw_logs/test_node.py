@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import convert_text_file_to_dataframe
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import retain_persons_with_prefix
+from src.czaspracy.pipelines.ingest_raw_logs.nodes import map_contact_points_to_sequence
 
 class TestConvertTextFileToDataFrame:
     def test(self):
@@ -128,3 +129,66 @@ class TestRemoveNotCompanyWorkesLogs():
         assert result['person'][0] == 'A:Person1' 
         assert result['person'][1] == 'A:Person2'  
         assert result['person'][2] == 'A:Person1'
+
+
+class TestMapContactPointsFunction():
+
+
+        
+    def test_can_inport(self):
+        func = map_contact_points_to_sequence
+        assert  func is not None
+
+    def test_has_dataframe_as_an_input_and_dictiorny_for_mapping(self):
+        with pytest.raises(RuntimeError) as err: 
+            map_contact_points_to_sequence("df", {'234':'234'})
+            assert "First input param should be dataFrame" in str(err)
+
+    def test_has_second_param_is_an_mapping_dict(self):      
+        with pytest.raises(RuntimeError) as err: 
+            map_contact_points_to_sequence(pd.DataFrame(), "dd")
+            assert "Second input param should be dict" in str(err)
+    
+    def test_should_not_return_None(self):
+        result = map_contact_points_to_sequence(pd.DataFrame({'person': [] , 'place': []}) ,{'asdf': 'asdf'})
+        assert result is not None
+
+    def test_raise_erors_if_input_data_frame_not_have_columns(self):
+        input_frame = pd.DataFrame() 
+         # Should contain colum:  'place'
+        with pytest.raises(RuntimeError) as err:
+            result = map_contact_points_to_sequence(input_frame, {})
+            assert 'Input frame should contain column: place' in str(err)
+    
+
+    def test_assert_retun_type_isdataframe(self):
+        correct_input_frame = pd.DataFrame({'place':['A', 'B']})
+        result = map_contact_points_to_sequence(correct_input_frame, {})
+
+        assert isinstance(result,pd.DataFrame)
+    
+    def test_result_frame_shoul_contain_colum_segence(self):
+        correct_input_frame = pd.DataFrame({'place':['A', 'B']})
+        result = map_contact_points_to_sequence(correct_input_frame , {})
+        assert isinstance(result,pd.DataFrame)
+        assert 'sequence' in result.columns
+
+    def test_should_correcy_map_contact_points(self):
+        mapping = {'A' : 1, 'B' : 0}
+        correct_input_frame = pd.DataFrame({'place':['A', 'B']})
+        result = map_contact_points_to_sequence(correct_input_frame, mapping)
+ 
+        assert result['sequence'][0] == 1
+        assert result['sequence'][1] == 0
+        
+        correct_input_frame = pd.DataFrame({'place':['A', 'A']})
+        result = map_contact_points_to_sequence(correct_input_frame, mapping)
+ 
+        assert result['sequence'][0] == 1
+        assert result['sequence'][1] == 1
+
+        correct_input_frame = pd.DataFrame({'place':['B', 'B']})
+        result = map_contact_points_to_sequence(correct_input_frame, mapping)
+ 
+        assert result['sequence'][0] == 0
+        assert result['sequence'][1] == 0

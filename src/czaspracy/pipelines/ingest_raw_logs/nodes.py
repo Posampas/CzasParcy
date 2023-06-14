@@ -53,7 +53,30 @@ def retain_persons_with_prefix(logs: pd.DataFrame, company_prefix: str):
     logs = logs[logs['person'].str.contains(company_prefix)]
     return logs.reset_index()
 
-test_data = ['A:Person1', 'B:Person1', 'C:Person1','A:Person1']
-date = ['2022-02-22', '2022-02-22', '2022-02-22', '2022-02-22']
-result = retain_persons_with_prefix(pd.DataFrame({'person' : test_data, 'date': date}), 'A:')
-print(result)
+
+def map_contact_points_to_sequence(logs: pd.DataFrame, mapping) -> pd.DataFrame:
+    """
+    input: pd.DataFrame containg the logs
+    output: pd.DataFrame Data frame zawierajacy mozliwa sekwecje wejsc i
+    wyjsc z obiektu.
+    
+    Mapuje Nazwy punktów kontatku, gdzie 1 to kontakt na
+    bramce wysciowej a 0 to kontakt na bramce wewnatrz obiektu
+
+    """
+    print("____________----------__________--",type(mapping))
+    if logs is None or mapping is None:
+        raise RuntimeError('Input param can not be None')
+    
+
+    
+    if not isinstance(logs, pd.DataFrame):
+        raise RuntimeError('First input param should be dataFrame')
+    if 'place' not in logs.columns:
+        raise RuntimeError('Input frame should contain column: place')
+    if not isinstance(mapping, dict):
+         raise RuntimeError('Second input param should be dict')
+
+    logs['sequence'] = logs['place'].map(mapping)
+    
+    return logs
