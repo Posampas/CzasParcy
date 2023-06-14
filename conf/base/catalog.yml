@@ -13,3 +13,7 @@ rejected_logs:
 only_TP_emp:
   type: pandas.CSVDataSet
   filepath: data/01_raw/only_TE_emp.csv
+
+contact_points_mapped:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/contact_points_mapped.csv

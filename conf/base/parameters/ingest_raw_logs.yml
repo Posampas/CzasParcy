@@ -1,2 +1,14 @@
 
 technik_polska_perfix: U:TP
+entrace_mapping:
+  S:RECEPCJA,: 1
+  S:BIURA PARTER: 0
+  S:Piwnica: 0
+  S:BIURA 1 PI�TRO: 0
+  S:BIURA 3 PI�TRO: 0
+  K:1 PI�TRO KLATKA: 0
+  K:Parking: 1
+  K:3 PI�TRO KLATKA: 0
+  K:WINDA_KONTROLER: 0
+  K:WEJSCIE: 1
+  K:PARTER KORYTARZ: 0
