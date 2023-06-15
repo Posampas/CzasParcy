@@ -3,6 +3,7 @@ import pandas as pd
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import convert_text_file_to_dataframe
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import retain_persons_with_prefix
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import map_contact_points_to_sequence
+from src.czaspracy.pipelines.ingest_raw_logs.nodes import remove_Logs_With_Contact_Points_In
 
 class TestConvertTextFileToDataFrame:
     def test(self):
@@ -192,3 +193,59 @@ class TestMapContactPointsFunction():
  
         assert result['sequence'][0] == 0
         assert result['sequence'][1] == 0
+
+class TestRemoveNotCorrectContactPoints:
+
+    def test_can_import(slef):
+        func = remove_Logs_With_Contact_Points_In
+        assert func is not None
+    
+    def test_should_throw_when_input_is_not_dataframe(slef):
+
+
+        with pytest.raises(RuntimeError) as err:
+            remove_Logs_With_Contact_Points_In('', '')
+            assert 'First input param should be dataFrame' in str(err)
+        
+    def test_should_throw_when_frame_do_not_contain_column_place(self):
+        with pytest.raises(RuntimeError) as err:
+            remove_Logs_With_Contact_Points_In(pd.DataFrame(), ['A'])
+            assert ('Input frame should contain column: place') in str(err)
+
+    def test_take_list_of_places_to_remove_as_parameter(self):
+        input = pd.DataFrame({'place':['A']})
+        remove_Logs_With_Contact_Points_In(input, ['A']) 
+
+        with pytest.raises(RuntimeError) as err:
+            remove_Logs_With_Contact_Points_In(input, 'A')
+            assert ('places_to_remove parameter should be list of stirngs') in str(err)
+
+    def test_shoud_not_return_None(self):
+        input = pd.DataFrame({'place':['A']})
+        result = remove_Logs_With_Contact_Points_In(input, ['A'])
+        assert result is not None
+
+    def test_should_return_dataframe(slef):
+        input = pd.DataFrame({'place':['A']})
+        result = remove_Logs_With_Contact_Points_In(input, ['A'])
+        assert result is not None
+        assert isinstance(result, pd.DataFrame)
+    
+    def test_should_remove_plaves_from_list(slef):
+        input = pd.DataFrame({'place':['A']})
+        result = remove_Logs_With_Contact_Points_In(input, ['A'])
+        assert result is not None
+        assert len(result ) == 0
+
+
+        input = pd.DataFrame({'place':['A', 'B']})
+        result = remove_Logs_With_Contact_Points_In(input, ['A'])
+        assert result is not None
+        assert len(result ) == 1
+        assert result['place'][0] == 'B' 
+
+        input = pd.DataFrame({'place':['A', 'B', 'C','D','D']})
+        result = remove_Logs_With_Contact_Points_In(input, ['A','D'])
+        assert result is not None
+        assert len(result ) == 2
+        assert result['place'].tolist() == ['B','C']

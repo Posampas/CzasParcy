@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from datetime import time
+from typing import List
 
 def convert_text_file_to_dataframe(contets : str):
     if not isinstance(contets, str):
@@ -64,11 +65,8 @@ def map_contact_points_to_sequence(logs: pd.DataFrame, mapping) -> pd.DataFrame:
     bramce wysciowej a 0 to kontakt na bramce wewnatrz obiektu
 
     """
-    print("____________----------__________--",type(mapping))
     if logs is None or mapping is None:
         raise RuntimeError('Input param can not be None')
-    
-
     
     if not isinstance(logs, pd.DataFrame):
         raise RuntimeError('First input param should be dataFrame')
@@ -80,3 +78,14 @@ def map_contact_points_to_sequence(logs: pd.DataFrame, mapping) -> pd.DataFrame:
     logs['sequence'] = logs['place'].map(mapping)
     
     return logs
+
+def remove_Logs_With_Contact_Points_In(logs: pd.DataFrame, places_to_remove: List ):
+    if not isinstance(logs, pd.DataFrame):
+        raise RuntimeError('First input param should be dataFrame')
+    if 'place' not in logs.columns:
+        raise RuntimeError('Input frame should contain column: place')
+    if not isinstance(places_to_remove, list):
+        raise RuntimeError('places_to_remove parameter should be list of stirngs') 
+    for place in places_to_remove:
+        logs = logs[logs['place'] != place]
+    return logs.reset_index()
