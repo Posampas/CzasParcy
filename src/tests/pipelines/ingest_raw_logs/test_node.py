@@ -5,6 +5,7 @@ from src.czaspracy.pipelines.ingest_raw_logs.nodes import retain_persons_with_pr
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import map_contact_points_to_sequence
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import remove_Logs_With_Contact_Points_In
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import calculate_time_in_office
+from src.czaspracy.pipelines.ingest_raw_logs.nodes import add_missing_entires
 
 class TestConvertTextFileToDataFrame:
     def test(self):
@@ -93,7 +94,6 @@ class TestConvertTextFileToDataFrame:
         assert len(result) == 2
         assert len(rejected) == 6
 
-
 class TestRemoveNotCompanyWorkesLogs():
 
     def test_can_import(self):
@@ -131,7 +131,6 @@ class TestRemoveNotCompanyWorkesLogs():
         assert result['person'][0] == 'A:Person1' 
         assert result['person'][1] == 'A:Person2'  
         assert result['person'][2] == 'A:Person1'
-
 
 class TestMapContactPointsFunction():
 
@@ -319,3 +318,147 @@ class TestCalcuateTimeForOneDay:
         # result = calculate_time_in_office(input)
         # assert result['work_time'][0] == pd.Timedelta(hours=3)
         # assert len(result) == 1
+
+class TestAppendMissingEntryPoints():
+
+    
+
+    def test_can_import(self):
+        func = add_missing_entires
+        assert func is not None
+
+    def test_should_throw_error_if_dataframe_is_not_an_input(self):
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires("sadf")
+            assert 'First input param should be dataFrame' in str(err) 
+    
+    def test_should_throw_when_columns_not_present(self):
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[1,1], 'date':['2023-01-01','2023-01-01'], 'place':['A','A'], 'hour':['1:00','2:00']}) 
+
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires(input.drop(axis=1 , columns='person'))
+            assert 'First input param should be dataFrame' in str(err)  
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires(input.drop(axis=1 , columns='date'))
+            assert 'First input param should be dataFrame' in str(err)  
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires(input.drop(axis=1 , columns='sequence'))
+            assert 'First input param should be dataFrame' in str(err) 
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires(input.drop(axis=1 , columns='place'))
+            assert 'First input param should be dataFrame' in str(err) 
+        with pytest.raises(RuntimeError) as err:
+            add_missing_entires(input.drop(axis=1 , columns='hour'))
+            assert 'First input param should be dataFrame' in str(err) 
+    
+    
+    def test_should_return_dataframe(self):
+
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[1,1], 'date':['2023-01-01','2023-01-01'], 'place':['A','A'], 'hour':['1:00','2:00']}) 
+        result = add_missing_entires(input)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_should_retrun_correct_entry_point(self):
+
+        # should not change enything 
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[1,1], 'date':['2023-01-01','2023-01-01'], 'hour':['7:16','7:00'],'place':['A','A']})
+        result = add_missing_entires(input)
+        assert result['sequence'].tolist() == [1,1]
+
+    def test_should_add_log_entry_in_the_begging(self):
+        # should add entry point in the begiging
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[0,1], 'date':['2023-01-01','2023-01-01'], 'hour':['7:16','7:00'],'place':['A','A']})
+        result = add_missing_entires(input)
+        assert isinstance(result, pd.DataFrame)
+        assert result.columns.to_list() == input.columns.tolist()
+        assert len(result) == 3
+        assert result['sequence'].tolist() == [1,0,1]
+
+    def test_should_add_log_entry_in_the_end(self):
+        # should add entry point in the end
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[1,0], 'date':['2023-01-01','2023-01-01'], 'hour':['7:16','7:00'],'place':['A','A']})
+        result = add_missing_entires(input)
+        print(result)
+        assert len(result) == 3
+        assert result['sequence'].tolist() == [1,0,1]        
+
+    def test_should_add_log_entry_in_the_start_and_begging(self):
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[0,0], 'date':['2023-01-01','2023-01-01'], 'hour':['7:16','7:00'],'place':['A','A']})
+        result = add_missing_entires(input)
+        print(result)
+        assert len(result) == 4
+        assert result['sequence'].tolist() == [1,0,0,1]
+
+        input = pd.DataFrame({'person':['A'], 'sequence':[0], 'date':['2023-01-01'], 'hour':['7:16'],'place':['A']})
+        result = add_missing_entires(input)
+        assert result['sequence'].tolist() == [1,0,1]       
+
+    def test_should_add(self):
+        input = _create_test_logs(4)
+        input['sequence'] = [0,1,0,0]
+        result = add_missing_entires(input)
+        print(result['sequence'].to_list())
+        assert result['sequence'].tolist() == [1,0,1,1,0,0,1] 
+
+        input['sequence'] = [0,0,1,0]
+        result = add_missing_entires(input)
+        print(result['sequence'].to_list())
+        assert result['sequence'].tolist() == [1,0,0,1,1,0,1] 
+
+        input['sequence'] = [0,0,1,1]
+        result = add_missing_entires(input)
+        print(result['sequence'].to_list())
+        assert result['sequence'].tolist() == [1,0,0,1,1,1] 
+    
+        input['sequence'] = [0,1,0,1]
+        result = add_missing_entires(input)
+        print(result['sequence'].tolist() )
+        assert result['sequence'].tolist() == [1,0,1,1,0,1] 
+        
+        input['sequence'] = [1,1,1,0]
+        result = add_missing_entires(input)
+        print(result['sequence'].tolist() )
+        assert result['sequence'].tolist() == [1,1,1,0,1] 
+
+        input['sequence'] = [1,1,0,0]
+        result = add_missing_entires(input)
+        print(result['sequence'].tolist() )
+        assert result['sequence'].tolist() == [1,1,1,0,0,1]
+
+
+    def test_should_check_sequences_for_perons_for_days(self):
+        input = _create_test_logs(2, person_name = 'A')
+        input['sequence'] = [1,1] 
+        input = pd.concat( [ input, _create_test_logs(2, person_name = 'A')], axis=0, ignore_index = True )
+        input['sequence'] = [1,1,1,1]
+
+        result = add_missing_entires(input)
+        assert result['sequence'].tolist() == [1,1,1,1]
+
+        
+        input = _create_test_logs(2, person_name = 'A')
+        input = pd.concat( [ input, _create_test_logs(2, person_name = 'B')], axis=0, ignore_index = True )
+        input['sequence'] = [0,0,0,1]
+
+
+        result = add_missing_entires(input)
+        assert result['sequence'].tolist() == [1,0,0,1,1,0,1]
+
+    
+
+
+def _create_test_logs(length, person_name = 'A'):
+    places  = ['place1' for i in range(length)]
+    person  = [person_name for i in range(length)]
+    date  = ['2023-12-1' for i in range(length)]
+    hour  = ['8:0' for i in range(length)]
+
+    return pd.DataFrame({'person':person, 'date': date, 'hour':hour,'place':places})
+
+
+
+
+
+    
+
+

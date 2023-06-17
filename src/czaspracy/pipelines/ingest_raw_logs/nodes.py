@@ -102,6 +102,64 @@ def calculate_time_in_office(logs: pd.DataFrame):
     logs['work_time'] = logs['datetime'][len(logs) - 1] - logs['datetime'][0]
     return logs[:1]
 
+def add_missing_entires(logs: pd.DataFrame):
+    if not isinstance(logs, pd.DataFrame):
+        raise RuntimeError('First input param should be dataFrame')
+    _throw_if_does_not_contain_column(logs.columns.to_list(), ['person','sequence','date','hour','place'])
+    persons = logs['person'].unique().tolist()
+    person_frames = []
+    for person in persons:
+        person_frame = logs[logs['person'] == person]
+        days = person_frame['date'].unique().tolist()
+        person_days_frames = []
+        for day in days:
+            day_frame = person_frame[person_frame['date'] == day].copy(deep = True)
+            person_days_frames.append(process_sequence(day_frame))
+        person_frames.append(pd.concat(person_days_frames, axis=0, ignore_index= True))
+    return pd.concat(person_frames, axis=0, ignore_index= True)
+            
+def process_sequence(logs: pd.DataFrame):
+    if logs['sequence'].iloc[0] == 0:
+        entry = logs[:1].copy(deep=True)
+        entry['sequence'] = 1
+        logs = pd.concat([entry,logs],axis=0, ignore_index= True)
+
+    length = len(logs)
+    if logs['sequence'].iloc[(length - 1)] == 0:
+        entry = logs[length - 1:].copy(deep=True)
+        entry['sequence'] = 1
+        logs = pd.concat([logs,entry],axis=0, ignore_index= True) 
+
+        
+    inside = False
+    to_insert = []
+    for idx, log in logs.iterrows():
+        current = log['sequence']
+        if not inside and current == 0:
+            insert = log.copy(deep=True)
+            insert['sequence'] = 1
+            to_insert.append((idx, insert))
+            inside = True
+        elif not inside and current == 1:
+            inside = True
+        elif inside and current == 1:
+            inside = False
+
+    # should be outside after exitg the loop
+    if inside:
+        entry = logs[length - 1:].copy(deep=True)
+        entry['sequence'] = 1
+        logs = pd.concat([logs,entry],axis=0, ignore_index= True) 
+
+    for insert in to_insert:
+            frame_dict = {}
+            for column in logs.columns:
+                frame_dict[column] = [insert[1][column]]
+            before = logs[:insert[0]]
+            after = logs[insert[0]:]
+            logs =  pd.concat([before, pd.DataFrame(frame_dict) , after], axis=0, ignore_index=True)
+    
+    return logs.reindex()
 
 
 def _throw_if_does_not_contain_column(frame_columns: List, required_columns: List) -> None:
@@ -109,3 +167,9 @@ def _throw_if_does_not_contain_column(frame_columns: List, required_columns: Lis
     for column in required_columns:
         if column not in frame_columns:
             raise RuntimeError('Input should cotain column {}'.format(column))
+        
+seq = ['A','A','B','B']
+input = pd.DataFrame({'person':seq, 'sequence':[0,0,0,1], 'date':seq, 'hour':seq,'place':seq})
+result = add_missing_entires(input)
+print(result)
+       
