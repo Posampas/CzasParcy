@@ -4,6 +4,7 @@ from src.czaspracy.pipelines.ingest_raw_logs.nodes import convert_text_file_to_d
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import retain_persons_with_prefix
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import map_contact_points_to_sequence
 from src.czaspracy.pipelines.ingest_raw_logs.nodes import remove_Logs_With_Contact_Points_In
+from src.czaspracy.pipelines.ingest_raw_logs.nodes import calculate_time_in_office
 
 class TestConvertTextFileToDataFrame:
     def test(self):
@@ -231,7 +232,7 @@ class TestRemoveNotCorrectContactPoints:
         assert result is not None
         assert isinstance(result, pd.DataFrame)
     
-    def test_should_remove_plaves_from_list(slef):
+    def test_should_remove_places_from_list(slef):
         input = pd.DataFrame({'place':['A']})
         result = remove_Logs_With_Contact_Points_In(input, ['A'])
         assert result is not None
@@ -249,3 +250,72 @@ class TestRemoveNotCorrectContactPoints:
         assert result is not None
         assert len(result ) == 2
         assert result['place'].tolist() == ['B','C']
+
+class TestCalcuateTimeForOneDay:
+    def test_should_import(self):
+        func = calculate_time_in_office
+        assert func is not None
+    
+    def test_should_take_dataframe_as_parameter(self):
+
+        with pytest.raises(RuntimeError) as err:
+            calculate_time_in_office("sadf")
+            assert 'First input param should be dataFrame' in str(err) 
+
+    def test_input_should_contain_columns(self):
+        input = pd.DataFrame({'person':[], 'sequence':[], 'date':[], 'hour':[]})
+
+        with pytest.raises(RuntimeError) as err:
+            calculate_time_in_office(pd.DataFrame({ 'sequence':[], 'date':[], 'hour':[]}))
+            assert 'Input should cotain column person' in str(err) 
+
+        with pytest.raises(RuntimeError) as err:
+            calculate_time_in_office(pd.DataFrame({'person':[],  'date':[], 'hour':[]}))
+            assert 'Input should cotain column person' in str(err) 
+
+        with pytest.raises(RuntimeError) as err:
+            calculate_time_in_office(pd.DataFrame({'person':[], 'sequence':[],  'hour':[]}))
+            assert 'Input should cotain column person' in str(err)
+
+        with pytest.raises(RuntimeError) as err:
+            calculate_time_in_office(pd.DataFrame({'person':[], 'sequence':[], 'date':[], }))
+            assert 'Input should cotain column person' in str(err) 
+
+    def test_should_return_dataframe(self):
+        input = pd.DataFrame({'person':[], 'sequence':[], 'date':[], 'hour':[]})
+        result = calculate_time_in_office(input)
+
+        assert isinstance(result,pd.DataFrame)
+
+    def test_should_return_empty_dataframe_if_input_data_is_empty(self):
+        input = pd.DataFrame({'person':[], 'sequence':[], 'date':[], 'hour':[]})
+        result = calculate_time_in_office(input)
+
+        assert isinstance(result,pd.DataFrame)
+        assert len(result) == 0 
+
+    def test_should_contain_column_work_time(self):
+        input = pd.DataFrame({'person':[], 'sequence':[], 'date':[], 'hour':[]})
+        result = calculate_time_in_office(input)
+        assert 'work_time' in result.columns.to_list()
+
+    def test_should_correct_value_if_sequence_(self):
+        input = pd.DataFrame({'person':['A','A'], 'sequence':[1,1], 'date':['2023-01-01','2023-01-01'], 'hour':['7:00','8:00']}) 
+
+        result = calculate_time_in_office(input)
+        assert result['person'][0] == 'A'
+        assert isinstance(result['datetime'][0],pd.Timestamp)
+        assert result['date'][0] == '2023-01-01'
+        assert result['datetime'][0] == pd.Timestamp('2023-01-01 7:00:00')
+        assert result['work_time'][0] == pd.Timedelta(hours=1)
+        assert len(result) == 1
+
+        input = pd.DataFrame({'person':['A','A','A'], 'sequence':[1,0,1], 'date':['2023-01-01','2023-01-01','2023-01-01'], 'hour':['7:00','8:00','9:00']})  
+        result = calculate_time_in_office(input)
+        assert result['work_time'][0] == pd.Timedelta(hours=2)
+        assert len(result) == 1
+
+        # input = pd.DataFrame({'person':['A','A','A','A','A'], 'sequence':[1,0,1,1,1], 'date':['2023-01-01','2023-01-01','2023-01-01','2023-01-01','2023-01-01'], 'hour':['7:00','8:00','9:00','10:00','11:00' ]})  
+        # result = calculate_time_in_office(input)
+        # assert result['work_time'][0] == pd.Timedelta(hours=3)
+        # assert len(result) == 1

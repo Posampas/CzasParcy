@@ -89,3 +89,23 @@ def remove_Logs_With_Contact_Points_In(logs: pd.DataFrame, places_to_remove: Lis
     for place in places_to_remove:
         logs = logs[logs['place'] != place]
     return logs.reset_index()
+
+def calculate_time_in_office(logs: pd.DataFrame):
+    if not isinstance(logs, pd.DataFrame):
+        raise RuntimeError('First input param should be dataFrame')
+    _throw_if_does_not_contain_column(logs.columns.to_list(), ['person','sequence','date','hour'])
+    if len(logs) == 0:
+        logs['work_time'] = None
+        return logs
+    logs['datetime'] = logs['date'] + " " + logs['hour']
+    logs['datetime'] = pd.to_datetime(logs['datetime'])
+    logs['work_time'] = logs['datetime'][len(logs) - 1] - logs['datetime'][0]
+    return logs[:1]
+
+
+
+def _throw_if_does_not_contain_column(frame_columns: List, required_columns: List) -> None:
+
+    for column in required_columns:
+        if column not in frame_columns:
+            raise RuntimeError('Input should cotain column {}'.format(column))

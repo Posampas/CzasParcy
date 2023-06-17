@@ -1,8 +1,3 @@
-"""
-This is a boilerplate pipeline 'ingest_raw_logs'
-generated using Kedro 0.18.9
-"""
-
 from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import convert_text_file_to_dataframe, retain_persons_with_prefix, map_contact_points_to_sequence, remove_Logs_With_Contact_Points_In
 
