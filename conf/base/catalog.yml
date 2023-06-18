@@ -17,3 +17,7 @@ only_TP_emp:
 contact_points_mapped:
   type: pandas.CSVDataSet
   filepath: data/01_raw/contact_points_mapped.csv
+
+correct_sequece:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/correct_sequece.csv

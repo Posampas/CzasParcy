@@ -1,5 +1,5 @@
 from kedro.pipeline import Pipeline, node, pipeline
-from .nodes import convert_text_file_to_dataframe, retain_persons_with_prefix, map_contact_points_to_sequence, remove_Logs_With_Contact_Points_In
+from .nodes import convert_text_file_to_dataframe, retain_persons_with_prefix, map_contact_points_to_sequence, remove_Logs_With_Contact_Points_In, add_missing_entires
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline(
@@ -27,9 +27,15 @@ def create_pipeline(**kwargs) -> Pipeline:
             inputs=["wrong_places_removed", 'params:entrace_mapping'],
             outputs="contact_points_mapped",
             name="Zmapuj_odbicia_karty_do_0_i_1"
+        ),
+        node(
+            func= add_missing_entires,
+            inputs=["contact_points_mapped"],
+            outputs="correct_sequece",
+            name="Dodaj_brakujace_logi"
         )]
         ,
         inputs="raw_logs",
-        outputs='contact_points_mapped'
+        outputs='correct_sequece'
     )
     
